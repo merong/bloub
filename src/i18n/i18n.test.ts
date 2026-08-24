@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { EXPRESSIONS } from '@/bot/expressions'
+import { GRADES } from '@/bot/grades'
 import { COLORS, SHAPES } from '@/bot/skins'
 import { STATES } from '@/bot/states'
 import { formePlurielle, interpoler } from './format'
@@ -76,7 +77,7 @@ describe('completude des dictionnaires', () => {
     // Les noms de marque et les gabarits purs (« {state}, {duration} ») sont
     // identiques d'une langue a l'autre, c'est normal — on ne regarde donc que
     // les catalogues, ou chaque entree est un vrai mot a traduire.
-    for (const famille of ['states', 'shapes', 'colors', 'expressions'] as const) {
+    for (const famille of ['states', 'shapes', 'colors', 'expressions', 'grades'] as const) {
       for (const [cle, valeur] of feuilles(fr[famille])) {
         expect(feuilles(zh[famille]).find(([k]) => k === cle)![1], `zh ${famille}.${cle}`).not.toBe(
           valeur
@@ -85,12 +86,13 @@ describe('completude des dictionnaires', () => {
     }
   })
 
-  it('couvre les quatre catalogues du bot, entree par entree', () => {
+  it('couvre les cinq catalogues du bot, entree par entree', () => {
     const cles = (famille: object) => feuilles(famille).map(([k]) => k)
     expect(cles(fr.states).sort()).toEqual(STATES.map((s) => s.id).sort())
     expect(cles(fr.shapes).sort()).toEqual(SHAPES.map((s) => s.id).sort())
     expect(cles(fr.colors).sort()).toEqual(COLORS.map((c) => c.id).sort())
     expect(cles(fr.expressions).sort()).toEqual(EXPRESSIONS.map((e) => e.id).sort())
+    expect(cles(fr.grades).sort()).toEqual(GRADES.map((g) => g.id).sort())
   })
 })
 

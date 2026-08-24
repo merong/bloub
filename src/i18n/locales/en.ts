@@ -27,7 +27,8 @@ const en: typeof fr = {
     animations: 'Animation',
     shape: 'Shape',
     expression: 'Expression',
-    color: 'Colour'
+    color: 'Colour',
+    grade: 'Grade'
   },
 
   export: {
@@ -156,6 +157,14 @@ const en: typeof fr = {
     violet: 'Purple',
     rose: 'Pink',
     gris: 'Grey'
+  },
+
+  grades: {
+    normal: 'Normal',
+    common: 'Common',
+    rare: 'Rare',
+    unique: 'Unique',
+    legend: 'Legend'
   },
 
   expressions: {

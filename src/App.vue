@@ -54,6 +54,7 @@ import {
   type Cycle
 } from '@/bot/cycles'
 import { DEFAULT_EXPRESSION, EXPRESSION_BY_ID } from '@/bot/expressions'
+import { DEFAULT_GRADE, GRADE_BY_ID } from '@/bot/grades'
 import { COLOR_BY_ID, DEFAULT_COLOR, DEFAULT_SHAPE, SHAPE_BY_ID } from '@/bot/skins'
 import { POSES, SEQUENCE, STATES, type StateId } from '@/bot/states'
 
@@ -154,7 +155,7 @@ function locate(id: StateId) {
 }
 
 /**
- * Forme, couleur, expression et cycle survivent au rechargement : c'est l'avatar
+ * Forme, couleur, expression, rang et cycle survivent au rechargement : c'est l'avatar
  * de l'utilisateur, pas un reglage de session. On valide au chargement, un id
  * inconnu retombe sur le defaut.
  */
@@ -443,10 +444,12 @@ const color = ref(stored('couleur', DEFAULT_COLOR, (v) => COLOR_BY_ID.has(v)))
 const expression = ref(
   stored('expression', DEFAULT_EXPRESSION, (v) => EXPRESSION_BY_ID.has(v))
 )
+const grade = ref(stored('grade', DEFAULT_GRADE, (v) => GRADE_BY_ID.has(v)))
 
 watch(shape, (v) => ecris('forme', v))
 watch(color, (v) => ecris('couleur', v))
 watch(expression, (v) => ecris('expression', v))
+watch(grade, (v) => ecris('grade', v))
 
 /**
  * Nom du produit, en capitales pour le grand mot du pied de page. PAS traduit —
@@ -595,7 +598,12 @@ async function exporteCycle() {
   const images = cycleImages(totalDuration(blocs), format)
   const pas = cyclePas(format)
   const taille = CYCLE_TAILLE[format]
-  const reglages = { shape: shape.value, color: color.value, expression: expression.value }
+  const reglages = {
+    shape: shape.value,
+    color: color.value,
+    expression: expression.value,
+    grade: grade.value
+  }
   const suit = (fait: number, total: number) => (avancementCycle.value = fait / total)
 
   avancementCycle.value = 0
@@ -679,16 +687,33 @@ async function exporte(id: ActionId, confirme = false) {
   clearTimeout(confirmation)
   etatExport.value = 'occupe'
   const nom = () =>
-    nomFichier(shape.value, expression.value, color.value, action.extension, action.suffixe)
+    nomFichier(
+      shape.value,
+      expression.value,
+      color.value,
+      action.extension,
+      action.suffixe,
+      grade.value
+    )
   try {
     if (action.mode === 'anime') {
       // L'animation ne part PAS du SVG affiche : elle est rejouee depuis le debut
       // sur une instance hors ecran. Cf. `sequenceDuBot`.
-      const reglages = { shape: shape.value, color: color.value, expression: expression.value }
+      const reglages = {
+        shape: shape.value,
+        color: color.value,
+        expression: expression.value,
+        grade: grade.value
+      }
       telecharge(await versSvgAnime(reglages, action.taille, ANIM_IMAGES, ANIM_PAS), nom())
       etatExport.value = 'exporte'
     } else if (action.mode === 'gif') {
-      const reglages = { shape: shape.value, color: color.value, expression: expression.value }
+      const reglages = {
+        shape: shape.value,
+        color: color.value,
+        expression: expression.value,
+        grade: grade.value
+      }
       const fond = couleurDeFond(fondGif.value)
       telecharge(await versGifAnime(reglages, action.taille, GIF_IMAGES, GIF_PAS, fond), nom())
       etatExport.value = 'exporte'
@@ -754,6 +779,7 @@ watch(
           :shape="shape"
           :color="color"
           :expression="expression"
+          :grade="grade"
           :frozen-at="POSES[s.id]"
         />
         <figcaption class="text-xs text-[var(--muted)]">{{ t(`states.${s.id}`) }}</figcaption>
@@ -872,6 +898,7 @@ watch(
             :shape="forme"
             :color="color"
             :expression="humeur ?? expression"
+            :grade="grade"
             :follow="view === 'reglages'"
             :gaze="intro ? INTRO_GAZE : null"
           />
@@ -960,6 +987,7 @@ watch(
               :shape="shape"
               :color="color"
               :expression="expression"
+              :grade="grade"
               :frozen-at="POSES[s.id]"
               @click="addBlock(s.id)"
             />
@@ -972,6 +1000,7 @@ watch(
             v-model:shape="shape"
             v-model:color="color"
             v-model:expression="expression"
+            v-model:grade="grade"
           />
         </template>
       </aside>
@@ -998,6 +1027,7 @@ watch(
       :shape="shape"
       :color="color"
       :expression="expression"
+      :grade="grade"
       @seek="onSeek"
       @preview="preview = true"
         @exporter="dialogueCycle = true"

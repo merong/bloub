@@ -59,6 +59,48 @@ function moteurAuMemeInstant(blocs: Block[], t: number) {
  * desormais du meme module, donc une assertion entre elles serait une tautologie. Ce qui
  * peut encore deriver, c'est le GABARIT.
  */
+describe('liseré de rang', () => {
+  it('embarque le trait et son css dans le SVG hors ecran', async () => {
+    const lecteur = await ouvreCycle(
+      { ...REGLAGES, grade: 'legend' },
+      defaultCycle().blocks,
+      TAILLE
+    )
+    try {
+      const svg = await lecteur.rendre(0)
+      expect(svg.querySelector('.grade-ring')).not.toBeNull()
+      expect(svg.querySelector('.grade-flare')).not.toBeNull()
+      expect(svg.querySelector('.grade-pupil')).not.toBeNull()
+      expect(svg.querySelector('.grade-glint')).not.toBeNull()
+      expect(svg.querySelector('style')?.textContent).toContain('prefers-reduced-motion')
+    } finally {
+      lecteur.ferme()
+    }
+  })
+
+  it('reserve la pupille aux rangs unique et legend', async () => {
+    const rare = await ouvreCycle({ ...REGLAGES, grade: 'rare' }, defaultCycle().blocks, TAILLE)
+    const unique = await ouvreCycle({ ...REGLAGES, grade: 'unique' }, defaultCycle().blocks, TAILLE)
+    try {
+      expect((await rare.rendre(0)).querySelector('.grade-pupil')).toBeNull()
+      expect((await unique.rendre(0)).querySelector('.grade-pupil')).not.toBeNull()
+    } finally {
+      rare.ferme()
+      unique.ferme()
+    }
+  })
+
+  it('n ajoute rien au rang normal', async () => {
+    const lecteur = await ouvreCycle(REGLAGES, defaultCycle().blocks, TAILLE)
+    try {
+      const svg = await lecteur.rendre(0)
+      expect(svg.querySelector('.grade-ring')).toBeNull()
+    } finally {
+      lecteur.ferme()
+    }
+  })
+})
+
 describe('cadre de l export', () => {
   it('exporte le cycle sur le viewBox que le composant dessine', async () => {
     const lecteur = await ouvreCycle(REGLAGES, defaultCycle().blocks, TAILLE)

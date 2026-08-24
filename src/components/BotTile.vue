@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import BloubBot from '@/components/BloubBot.vue'
 import { DEFAULT_EXPRESSION } from '@/bot/expressions'
+import { DEFAULT_GRADE } from '@/bot/grades'
 import { DEFAULT_COLOR, DEFAULT_SHAPE } from '@/bot/skins'
 import type { StateId } from '@/bot/states'
 
 /**
  * Vignette cliquable de la barre de droite : un bot fige, son nom dessous, une
- * bordure quand elle est retenue. Sert aux formes, aux expressions et aux
- * animations — les trois grilles doivent rester identiques a l'oeil, d'ou le
+ * bordure quand elle est retenue. Sert aux formes, aux expressions, aux
+ * rangs et aux animations — les grilles doivent rester identiques a l'oeil, d'ou le
  * composant partage plutot que la meme chaine de classes recopiee.
  *
  * `frozenAt` est obligatoire : une vignette animee ferait tourner autant de
@@ -22,6 +23,7 @@ withDefaults(
     shape?: string
     color?: string
     expression?: string
+    grade?: string
     size?: number
   }>(),
   {
@@ -29,6 +31,7 @@ withDefaults(
     shape: DEFAULT_SHAPE,
     color: DEFAULT_COLOR,
     expression: DEFAULT_EXPRESSION,
+    grade: DEFAULT_GRADE,
     size: 60
   }
 )
@@ -48,6 +51,7 @@ withDefaults(
       :shape="shape"
       :color="color"
       :expression="expression"
+      :grade="grade"
       :frozen-at="frozenAt"
     />
     <!-- 12 px : en dessous, une legende n'est plus lisible pour tout le monde -->

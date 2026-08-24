@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { GRADES, gradeOutset } from '@/bot/grades'
 import { RAYON } from '@/bot/repere'
 import { SHAPES } from '@/bot/skins'
 import {
@@ -17,6 +18,7 @@ import {
   ACTION_BY_ID,
   ACTION_DEFAUT,
   DEMI_CADRE,
+  GRADE_OUTSET_MAX,
   RAYON_MAX,
   nomFichier,
   sansCommentaires,
@@ -60,6 +62,12 @@ describe('cadre d export', () => {
     // cercle seul (1.0) le rognerait.
     expect(RAYON_MAX).toBeGreaterThan(1)
     expect(RAYON_MAX).toBe(Math.max(...SHAPES.map((f) => Math.max(...f.radii))))
+  })
+
+  it('loge le liseré du rang le plus large', () => {
+    expect(GRADE_OUTSET_MAX).toBe(Math.max(...GRADES.map(gradeOutset)))
+    const besoin = (RAYON_MAX + GRADE_OUTSET_MAX) * RAYON
+    expect(besoin, 'le liseré legendaire depasse du cadre').toBeLessThan(DEMI_CADRE)
   })
 
   it('produit un viewBox carre centre sur la boule', () => {
@@ -207,6 +215,18 @@ describe('nom de fichier', () => {
   it('se construit sur les ids et pas sur les libelles', () => {
     expect(nomFichier('goutte', 'neutre', 'encre', 'png')).toBe('bloub-goutte-neutre-encre.png')
     expect(nomFichier('cercle', 'hilare', 'violet', 'svg')).toBe('bloub-cercle-hilare-violet.svg')
+  })
+
+  it('ajoute le rang sauf au normal, qui ne change rien', () => {
+    expect(nomFichier('goutte', 'neutre', 'encre', 'png', '', 'rare')).toBe(
+      'bloub-goutte-neutre-encre-rare.png'
+    )
+    expect(nomFichier('goutte', 'neutre', 'encre', 'svg', 'anime', 'legend')).toBe(
+      'bloub-goutte-neutre-encre-legend-anime.svg'
+    )
+    expect(nomFichier('goutte', 'neutre', 'encre', 'png', '', 'normal')).toBe(
+      'bloub-goutte-neutre-encre.png'
+    )
   })
 
   /*

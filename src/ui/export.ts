@@ -4,6 +4,7 @@
  * vit dans `capture.ts`, elle, parce qu'elle a besoin d'un canvas.
  */
 
+import { GRADES, gradeOutset } from '@/bot/grades'
 import { DEMI_VIEWBOX, RAYON } from '@/bot/repere'
 import { SHAPES } from '@/bot/skins'
 
@@ -22,6 +23,12 @@ const MARGE = 1.08
 export const RAYON_MAX = Math.max(...SHAPES.map((forme) => Math.max(...forme.radii)))
 
 /**
+ * Debord du liseré le plus large. Le cadre unique loge aussi le rang
+ * legendaire : le recadrer a part remettrait chaque rang a la meme taille.
+ */
+export const GRADE_OUTSET_MAX = Math.max(...GRADES.map(gradeOutset))
+
+/**
  * Demi-cote du cadre d'export, en unites de viewBox.
  *
  * Il est plus SERRE que le viewBox de l'ecran (158), et c'est volontaire : la
@@ -34,7 +41,7 @@ export const RAYON_MAX = Math.max(...SHAPES.map((forme) => Math.max(...forme.rad
  * pareil a l'oeil », or les recadrer separement remettrait chacune a la meme
  * taille et casserait ce reglage.
  */
-export const DEMI_CADRE = Math.ceil(RAYON * RAYON_MAX * MARGE)
+export const DEMI_CADRE = Math.ceil(RAYON * (RAYON_MAX + GRADE_OUTSET_MAX) * MARGE)
 
 /** viewBox du document exporte, centre sur la boule. */
 export function viewBoxExport(demi = DEMI_CADRE) {
@@ -241,7 +248,8 @@ export function nomFichier(
   expression: string,
   couleur: string,
   extension: string,
-  suffixe = ''
+  suffixe = '',
+  grade = ''
 ) {
   const propre = (v: string) =>
     v
@@ -254,9 +262,14 @@ export function nomFichier(
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '')
       .slice(0, 40)
-  const morceaux = [propre(forme), propre(expression), propre(couleur), propre(suffixe)].filter(
-    Boolean
-  )
+  const rang = grade && grade !== 'normal' ? propre(grade) : ''
+  const morceaux = [
+    propre(forme),
+    propre(expression),
+    propre(couleur),
+    rang,
+    propre(suffixe)
+  ].filter(Boolean)
   return `bloub${morceaux.map((m) => `-${m}`).join('')}.${extension}`
 }
 

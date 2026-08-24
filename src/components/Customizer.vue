@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import BotTile from '@/components/BotTile.vue'
 import { EXPRESSIONS } from '@/bot/expressions'
+import { GRADES } from '@/bot/grades'
 import { COLORS, SHAPES } from '@/bot/skins'
 import { t } from '@/i18n'
 
 const shape = defineModel<string>('shape', { required: true })
 const color = defineModel<string>('color', { required: true })
 const expression = defineModel<string>('expression', { required: true })
+const grade = defineModel<string>('grade', { required: true })
 
 /**
  * Les vignettes sont figees a la meme date que la pose de repos : elles montrent
@@ -27,6 +29,7 @@ const PREVIEW_AT = 1
         :shape="s.id"
         :color="color"
         :expression="expression"
+        :grade="grade"
         :frozen-at="PREVIEW_AT"
         @click="shape = s.id"
       />
@@ -42,8 +45,26 @@ const PREVIEW_AT = 1
         :shape="shape"
         :color="color"
         :expression="e.id"
+        :grade="grade"
         :frozen-at="PREVIEW_AT"
         @click="expression = e.id"
+      />
+    </div>
+
+    <h2 class="mt-5 text-sm font-semibold">{{ t('panel.grade') }}</h2>
+    <div class="mt-2 grid grid-cols-5 gap-1.5">
+      <BotTile
+        v-for="g in GRADES"
+        :key="g.id"
+        :label="t(`grades.${g.id}`)"
+        :selected="g.id === grade"
+        :shape="shape"
+        :color="color"
+        :expression="expression"
+        :grade="g.id"
+        :size="48"
+        :frozen-at="PREVIEW_AT"
+        @click="grade = g.id"
       />
     </div>
 

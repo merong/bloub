@@ -10,6 +10,14 @@ import {
   EXPRESSION_BY_ID
 } from '@/bot/expressions'
 import {
+  DEFAULT_GRADE,
+  GRADE_BY_ID,
+  gradeCss,
+  gradeOeil,
+  gradeVisible,
+  teinteDuRang
+} from '@/bot/grades'
+import {
   COLOR_BY_ID,
   DEFAULT_COLOR,
   DEFAULT_SHAPE,
@@ -29,6 +37,8 @@ const props = withDefaults(
     color?: string
     /** identifiant d'expression de repos du personnalisateur */
     expression?: string
+    /** rang du liseré : choisi, pas releve. N'est pas une couleur de corps. */
+    grade?: string
     /** couleur du fond, utilisee pour la brume de profondeur des particules */
     paper?: string
     /**
@@ -61,6 +71,7 @@ const props = withDefaults(
     shape: DEFAULT_SHAPE,
     color: DEFAULT_COLOR,
     expression: DEFAULT_EXPRESSION,
+    grade: DEFAULT_GRADE,
     paper: '#f9f9f9',
     frozenAt: undefined,
     cycle: () => defaultCycle().blocks,
@@ -90,6 +101,26 @@ const VB = DEMI_VIEWBOX
 const shapeRadii = computed(() => SHAPE_BY_ID.get(props.shape)?.radii ?? null)
 const ink = computed(() => COLOR_BY_ID.get(props.color)?.hex ?? '#0a0a0c')
 const expression = computed(() => EXPRESSION_BY_ID.get(props.expression) ?? null)
+const grade = computed(() => GRADE_BY_ID.get(props.grade) ?? null)
+const gradeOn = computed(() => grade.value !== null && gradeVisible(grade.value))
+const gradeCssText = computed(() =>
+  grade.value && gradeOn.value ? gradeCss(uid, grade.value) : ''
+)
+const gradeTeinte = computed(() =>
+  grade.value ? teinteDuRang(grade.value, ink.value) : null
+)
+const gradePaint = computed(() =>
+  gradeTeinte.value?.stroke2 ? `url(#${uid}-grade)` : (gradeTeinte.value?.stroke ?? '')
+)
+/** Trait centre : le double pour que `width` soit la moitie visible. */
+const gradeRingWidth = computed(() => (grade.value ? grade.value.width * 2 * R : 0))
+const gradeDualWidth = computed(() => gradeRingWidth.value * 1.75)
+const gradeFlareWidth = computed(() => gradeRingWidth.value * 1.5)
+const gradeHaloWidth = computed(() => gradeRingWidth.value + (grade.value?.glow ?? 0) * 2 * R)
+const gradeBlur = computed(() => (grade.value?.glow ?? 0) * R)
+const gradeFlarePaint = computed(() => gradeTeinte.value?.stroke2 ?? gradePaint.value)
+const gradeGlowBoost = computed(() => (grade.value?.dual ? 1.8 : grade.value?.flare ? 1.5 : 1))
+const gradeYeux = computed(() => (grade.value ? gradeOeil(grade.value) : null))
 
 const engine = new BotEngine(R, state.value, shapeRadii.value, expression.value)
 const frame = shallowRef<BotFrame>(engine.sample(props.frozenAt ?? 0))
@@ -491,6 +522,12 @@ function dotAttrs(dot: BotFrame['dots'][number]) {
     role="img"
     :aria-label="t('app.botAria')"
   >
+    <!--
+      CSS DANS le SVG : l'export serialise ce noeud, une feuille de la page
+      n'y serait pas. `prefers-reduced-motion` y figure aussi, c'est un
+      vernis — le regard et le clignement, eux, ne s'annulent pas.
+    -->
+    <component :is="'style'" v-if="gradeCssText">{{ gradeCssText }}</component>
     <defs>
       <!--
         Les yeux sont de vrais trous perces dans le corps (comme sur x.ai), pas
@@ -523,6 +560,31 @@ function dotAttrs(dot: BotFrame['dots'][number]) {
         />
       </mask>
 
+      <linearGradient
+        v-if="gradeOn && gradeTeinte?.stroke2"
+        :id="`${uid}-grade`"
+        gradientUnits="userSpaceOnUse"
+        :x1="-R"
+        :y1="-R"
+        :x2="R"
+        :y2="R"
+      >
+        <stop offset="0" :stop-color="gradeTeinte.stroke" />
+        <stop offset="1" :stop-color="gradeTeinte.stroke2" />
+      </linearGradient>
+      <filter
+        v-if="gradeOn && grade && grade.glow > 0"
+        :id="`${uid}-grade-glow`"
+        x="-50%"
+        y="-50%"
+        width="200%"
+        height="200%"
+      >
+        <feGaussianBlur :stdDeviation="gradeBlur" />
+        <feComponentTransfer v-if="grade.flare">
+          <feFuncA type="linear" :slope="gradeGlowBoost" />
+        </feComponentTransfer>
+      </filter>
       <linearGradient
         v-for="arc in frame.arcs"
         :id="`${uid}-${arc.id}`"
@@ -564,6 +626,62 @@ function dotAttrs(dot: BotFrame['dots'][number]) {
       />
     </g>
 
+    <!--
+      Liseré SOUS le corps : le trait est centre sur le contour, la moitie
+      interieure disparait sous la silhouette. On ne reconstruit pas un
+      chemin dilate — toutes les formes partagent le meme `bodyPath`.
+    -->
+    <g
+      v-if="gradeOn && grade"
+      class="grade"
+      :class="`grade--${grade.motion}`"
+      fill="none"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <path
+        v-if="grade.glow > 0"
+        class="grade-halo"
+        :d="frame.bodyPath"
+        :stroke="gradePaint"
+        :stroke-width="gradeHaloWidth"
+        :filter="`url(#${uid}-grade-glow)`"
+        pathLength="100"
+      />
+      <path
+        v-if="grade.dual"
+        class="grade-ring grade-ring--dual"
+        :d="frame.bodyPath"
+        :stroke="gradePaint"
+        :stroke-width="gradeDualWidth"
+        opacity="0.45"
+        pathLength="100"
+      />
+      <path
+        class="grade-ring"
+        :d="frame.bodyPath"
+        :stroke="gradePaint"
+        :stroke-width="gradeRingWidth"
+        pathLength="100"
+      />
+      <path
+        v-if="grade.flare"
+        class="grade-flare"
+        :d="frame.bodyPath"
+        :stroke="gradeFlarePaint"
+        :stroke-width="gradeFlareWidth"
+        pathLength="100"
+      />
+      <path
+        v-if="grade.flare"
+        class="grade-flare grade-flare--alt"
+        :d="frame.bodyPath"
+        :stroke="gradeFlarePaint"
+        :stroke-width="gradeRingWidth"
+        pathLength="100"
+      />
+    </g>
+
     <g :opacity="frame.bodyAlpha">
       <!--
         Fond opaque a la forme exacte du corps, sous le corps lui-meme.
@@ -582,6 +700,69 @@ function dotAttrs(dot: BotFrame['dots'][number]) {
       <path :d="frame.bodyPath" :fill="props.paper" />
       <g :mask="`url(#${maskId})`">
         <rect :x="-VB" :y="-VB" :width="VB * 2" :height="VB * 2" :fill="ink" />
+      </g>
+    </g>
+
+    <!--
+      Pupille SUR le trou, pas dans le masque : y peindre ferait un second
+      trou, ou teindrait l'encre. Le clip reprend le chemin de l'oeil, le
+      regard et le clignement viennent du `matrix` du moteur.
+    -->
+    <g
+      v-if="gradeOn && gradeYeux && gradeTeinte && frame.eyes.length"
+      class="grade"
+      :class="`grade--${grade?.motion}`"
+      :opacity="frame.bodyAlpha"
+      pointer-events="none"
+    >
+      <g
+        v-for="(eye, i) in frame.eyes"
+        :key="`gp${i}`"
+        :transform="eye.matrix"
+        :opacity="eye.alpha"
+      >
+        <!--
+          clipPath DANS le groupe transforme : un clip en defs vit dans le
+          viewBox, et le disque (pose au centre de l'oeil) se faisait manger.
+        -->
+        <clipPath :id="`${uid}-oeil-${i}`">
+          <path :d="eye.d" />
+        </clipPath>
+        <g :clip-path="`url(#${uid}-oeil-${i})`">
+          <circle
+            class="grade-pupil"
+            cx="0"
+            cy="0"
+            :r="gradeYeux.pupil * R"
+            :fill="gradeTeinte.stroke"
+            :fill-opacity="grade?.dual ? 0.62 : 0.48"
+          />
+          <circle
+            v-if="gradeYeux.iris > 0 && gradeTeinte.stroke2"
+            class="grade-iris"
+            cx="0"
+            cy="0"
+            :r="gradeYeux.iris * R"
+            fill="none"
+            :stroke="gradeTeinte.stroke2"
+            :stroke-width="0.012 * R"
+          />
+          <circle
+            class="grade-glint"
+            :cx="-0.034 * R"
+            :cy="-0.04 * R"
+            :r="gradeYeux.glint * R"
+            fill="#fff"
+          />
+          <circle
+            v-if="gradeYeux.glint2 > 0"
+            class="grade-glint grade-glint--alt"
+            :cx="0.038 * R"
+            :cy="0.03 * R"
+            :r="gradeYeux.glint2 * R"
+            fill="#fff"
+          />
+        </g>
       </g>
     </g>
 

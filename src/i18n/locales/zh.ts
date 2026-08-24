@@ -32,7 +32,8 @@ const zh: typeof fr = {
     animations: '动画',
     shape: '形状',
     expression: '表情',
-    color: '颜色'
+    color: '颜色',
+    grade: '等级'
   },
 
   export: {
@@ -159,6 +160,14 @@ const zh: typeof fr = {
     violet: '紫色',
     rose: '粉色',
     gris: '灰色'
+  },
+
+  grades: {
+    normal: '普通',
+    common: '常见',
+    rare: '稀有',
+    unique: '独特',
+    legend: '传说'
   },
 
   expressions: {

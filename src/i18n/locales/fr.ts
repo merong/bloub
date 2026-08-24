@@ -44,7 +44,8 @@ export default {
     animations: 'Animation',
     shape: 'Forme',
     expression: 'Expression',
-    color: 'Couleur'
+    color: 'Couleur',
+    grade: 'Rang'
   },
 
   /**
@@ -181,6 +182,14 @@ export default {
     violet: 'Violet',
     rose: 'Rose',
     gris: 'Gris'
+  },
+
+  grades: {
+    normal: 'Normal',
+    common: 'Courant',
+    rare: 'Rare',
+    unique: 'Unique',
+    legend: 'Légende'
   },
 
   expressions: {
